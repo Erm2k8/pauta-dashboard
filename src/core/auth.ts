@@ -3,6 +3,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { errorText } from "./errors";
 import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession } from "./session";
 
 /** Chamado no início de toda Server Action — o proxy não protege actions sozinho. */
@@ -20,7 +21,14 @@ export async function login(_prev: { error?: string }, formData: FormData): Prom
   const ok = given.length === target.length && timingSafeEqual(given, target);
   if (!ok) return { error: "Senha incorreta." };
 
-  (await cookies()).set(SESSION_COOKIE, await signSession(), {
+  let token: string;
+  try {
+    token = await signSession();
+  } catch (e) {
+    return { error: errorText(e) };
+  }
+
+  (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

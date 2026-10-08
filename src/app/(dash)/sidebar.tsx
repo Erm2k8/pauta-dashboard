@@ -28,7 +28,7 @@ function ActiveBar({ show }: { show: boolean }) {
   );
 }
 
-function Nav({ contexts }: { contexts: SidebarContext[] }) {
+function Nav({ contexts, failure }: { contexts: SidebarContext[]; failure?: string | null }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const ctx = params.get("ctx");
@@ -68,7 +68,13 @@ function Nav({ contexts }: { contexts: SidebarContext[] }) {
               <span className="truncate">{c.name}</span>
             </Link>
           ))}
-          {contexts.length === 0 && (
+          {failure && (
+            <p role="alert" className="mx-2.5 mt-1 flex gap-2 rounded-md border border-warn/25 bg-warn/[0.04] px-2.5 py-2 text-[12px] leading-snug text-fg-2">
+              <Icon name="alert" size={13} className="mt-px shrink-0 text-warn" />
+              {failure}
+            </p>
+          )}
+          {contexts.length === 0 && !failure && (
             <Link href="/contexts" className={cx(itemClass(false), "text-fg-3")}>
               <Icon name="plus" className="text-fg-3" />
               Adicionar contexto
@@ -120,7 +126,7 @@ function RefreshButton({ ctx, name }: { ctx: string | null; name?: string }) {
   );
 }
 
-export function Sidebar({ contexts }: { contexts: SidebarContext[] }) {
+export function Sidebar({ contexts, failure }: { contexts: SidebarContext[]; failure?: string | null }) {
   return (
     <div className="flex h-full flex-col pt-3">
       <Link href="/" className="group mx-2 mb-5 flex h-9 items-center gap-2.5 rounded-md px-2.5 transition-colors hover:bg-surface">
@@ -128,7 +134,7 @@ export function Sidebar({ contexts }: { contexts: SidebarContext[] }) {
         <span className="text-[15px] font-semibold tracking-tight">Pauta</span>
       </Link>
       <Suspense>
-        <Nav contexts={contexts} />
+        <Nav contexts={contexts} failure={failure} />
       </Suspense>
     </div>
   );
