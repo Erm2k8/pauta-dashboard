@@ -170,6 +170,16 @@ textarea::placeholder {
   color: var(--fg-3);
 }
 
+/* Campo de busca dos filtros: mesma altura e superfície do Segmented. Fora de @layer para vencer o estilo global acima. */
+.filter-control {
+  height: 2rem;
+  font-size: 13px;
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: 8px;
+  padding: 0 10px 0 30px;
+}
+
 /* Tooltip leve: <span data-tip="texto">. */
 [data-tip] {
   position: relative;

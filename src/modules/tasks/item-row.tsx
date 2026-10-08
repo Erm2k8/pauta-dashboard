@@ -2,10 +2,11 @@
 
 import { useOptimistic, useTransition } from "react";
 import { setFocus, setPriority, snooze } from "@/core/actions";
-import type { Item, ItemMeta, Label, Person, Priority } from "@/core/types";
+import type { Item, ItemMeta, Person, Priority } from "@/core/types";
 import { cx, Dot, priorityLabel, PrSignals, Signal } from "@/ui";
 import { ago, due } from "@/ui/format";
 import { Icon, PriorityGlyph, StateIcon } from "@/ui/icons";
+import { LabelBadge } from "@/ui/label-badge";
 import { MenuItem, MenuLabel, MenuSeparator, Popover } from "@/ui/popover";
 import { toast } from "@/ui/toast";
 
@@ -48,15 +49,6 @@ function KindIcon({ item }: { item: Item }) {
   return (
     <span data-tip={item.status}>
       <StateIcon group={item.stateGroup} size={16} />
-    </span>
-  );
-}
-
-function LabelChip({ label }: { label: Label }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-fg-2">
-      <span className="size-2 shrink-0 rounded-full" style={{ background: `#${label.color}` }} />
-      {label.name}
     </span>
   );
 }
@@ -192,7 +184,7 @@ export function ItemRow({ item, context, now, index = 0 }: { item: Item; context
           {item.source === "plane" && <span className="whitespace-nowrap text-fg-2">{item.status}</span>}
 
           {item.labels.slice(0, MAX_LABELS).map((l) => (
-            <LabelChip key={l.name} label={l} />
+            <LabelBadge key={l.name} label={l} />
           ))}
           {item.labels.length > MAX_LABELS && (
             <span data-tip={item.labels.slice(MAX_LABELS).map((l) => l.name).join(", ")}>+{item.labels.length - MAX_LABELS}</span>

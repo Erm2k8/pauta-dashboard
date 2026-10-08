@@ -1,8 +1,10 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { loadItems } from "@/core/items";
 import type { Item } from "@/core/types";
 import { Empty, Errors, Page, Section } from "@/ui";
 import { due } from "@/ui/format";
+import { FilterBar } from "@/ui/filter-bar";
 import { Icon, PriorityGlyph } from "@/ui/icons";
 import { Segmented } from "@/ui/segmented";
 import { ItemList } from "./item-list";
@@ -14,7 +16,18 @@ export interface TaskFilters {
   show?: string;
   /** `mine` = suas; `unassigned` = sem responsável; vazio = todas. */
   who?: string;
+  q?: string;
+  /** Repo (GitHub) ou projeto (Plane). */
+  container?: string;
+  /** `0`…`3` ou `none`. */
+  priority?: string;
+  label?: string;
+  /** `1` = mostra todos os itens dos grupos, sem o limite inicial. */
+  all?: string;
 }
+
+/** Itens exibidos por grupo antes de "Mostrar todos". */
+const GROUP_LIMIT = 15;
 
 const PRIORITY_GROUPS = ["P0 · Urgente", "P1 · Alta", "P2 · Média", "P3 · Baixa"];
 const NO_PRIORITY = "Sem prioridade";
@@ -68,9 +81,20 @@ export async function TasksView({ filters }: { filters: TaskFilters }) {
 
   const open = items.filter((i) => !i.snoozed);
   const matchWho = (i: Item) => (filters.who === "mine" ? i.mine : filters.who === "unassigned" ? !i.assignees.length : true);
+  const needle = filters.q?.toLowerCase();
+  const matchPriority = (i: Item) =>
+    !filters.priority || (filters.priority === "none" ? i.priority === null : i.priority === Number(filters.priority));
+  const matchExtra = (i: Item) =>
+    (!needle || `${i.title} ${i.key} ${i.container}`.toLowerCase().includes(needle)) &&
+    (!filters.container || i.container === filters.container) &&
+    matchPriority(i) &&
+    (!filters.label || i.labels.some((l) => l.name === filters.label));
   const visible = items.filter(
-    (i) => matchWho(i) && (!filters.source || i.source === filters.source) && (filters.show === "snoozed" ? i.snoozed : !i.snoozed),
+    (i) => matchWho(i) && matchExtra(i) && (!filters.source || i.source === filters.source) && (filters.show === "snoozed" ? i.snoozed : !i.snoozed),
   );
+  const containers = [...new Set(items.map((i) => i.container))].sort();
+  const labelColors = new Map(items.flatMap((i) => i.labels.map((l) => [l.name, l.color] as const)));
+  const labels = [...labelColors.keys()].sort();
   const groups = groupItems(visible, filters.group, names);
 
   return (
@@ -123,6 +147,20 @@ export async function TasksView({ filters }: { filters: TaskFilters }) {
           ]}
         />
       </div>
+      <div className="mb-3 animate-enter">
+        <FilterBar
+          placeholder="Buscar título, chave ou repo…"
+          selects={[
+            { param: "container", placeholder: "Todos os repos/projetos", options: containers.map((c) => ({ value: c, label: c })) },
+            {
+              param: "priority",
+              placeholder: "Qualquer prioridade",
+              options: [...PRIORITY_GROUPS.map((label, i) => ({ value: String(i), label })), { value: "none", label: NO_PRIORITY }],
+            },
+            { param: "label", placeholder: "Qualquer label", options: labels.map((l) => ({ value: l, label: l, color: labelColors.get(l) })) },
+          ]}
+        />
+      </div>
       <div className="mb-6 flex flex-wrap items-center gap-2 animate-enter">
         <span className="mr-1 text-[13px] text-fg-3">Agrupar</span>
         <Segmented
@@ -171,7 +209,12 @@ export async function TasksView({ filters }: { filters: TaskFilters }) {
                 )
               }
             >
-              <ItemList items={g.items} contexts={byId} now={now} />
+              <ItemList items={filters.all ? g.items : g.items.slice(0, GROUP_LIMIT)} contexts={byId} now={now} />
+              {!filters.all && g.items.length > GROUP_LIMIT && (
+                <Link href={href(filters, { all: "1" })} scroll={false} className="mt-1 block px-2 py-2 text-[13px] text-fg-3 transition-colors hover:text-fg">
+                  Mostrar todos ({g.items.length - GROUP_LIMIT} a mais)
+                </Link>
+              )}
             </Section>
           );
         })

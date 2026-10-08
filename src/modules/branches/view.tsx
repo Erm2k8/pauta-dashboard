@@ -1,6 +1,7 @@
 import type { Branch } from "@/core/types";
 import { cx, Dot, Empty, Errors, Page, PrSignals, Section, Signal } from "@/ui";
 import { ago, daysSince } from "@/ui/format";
+import { FilterBar } from "@/ui/filter-bar";
 import { Icon } from "@/ui/icons";
 import { Segmented } from "@/ui/segmented";
 import { loadBranches } from "./data";
@@ -76,26 +77,42 @@ function BranchRow({ branch, now, index }: { branch: Branch; now: number; index:
   );
 }
 
-export async function BranchesView({ ctx, filter }: { ctx?: string; filter?: string }) {
+export interface BranchFilters {
+  ctx?: string;
+  /** `nopr` | `stale` | `merged`; vazio = abertas (sem as já mergeadas em dev). */
+  filter?: string;
+  q?: string;
+  repo?: string;
+}
+
+export async function BranchesView({ filters }: { filters: BranchFilters }) {
+  const { ctx, filter, q, repo: repoFilter } = filters;
   const { contexts, repos, errors, now } = await loadBranches(ctx);
   const byId = new Map(contexts.map((c) => [c.id, c]));
 
   const isStale = (b: Branch) => daysSince(b.lastCommitAt, now) > STALE_DAYS;
   const noPr = (b: Branch) => !b.pr && b.ahead > 0;
-  const keep = (b: Branch) => (filter === "stale" ? isStale(b) : filter === "nopr" ? noPr(b) : true);
-  const all = repos.flatMap((r) => r.branches);
+  const needle = q?.toLowerCase();
+  const matchText = (b: Branch) => !needle || `${b.name} ${b.lastCommitMessage} ${b.author}`.toLowerCase().includes(needle);
+  const scoped = repos.filter((r) => !repoFilter || r.repo === repoFilter);
+  const base = scoped.flatMap((r) => r.branches).filter(matchText);
+  const live = base.filter((b) => !b.merged);
+  const keep = (b: Branch) =>
+    matchText(b) && (filter === "merged" ? b.merged : !b.merged && (filter === "stale" ? isStale(b) : filter === "nopr" ? noPr(b) : true));
   const link = (f?: string) => {
-    const p = new URLSearchParams(Object.entries({ ctx, filter: f }).filter(([, v]) => v) as [string, string][]);
+    const p = new URLSearchParams(Object.entries({ ctx, filter: f, q, repo: repoFilter }).filter(([, v]) => v) as [string, string][]);
     return `/branches${p.size ? `?${p}` : ""}`;
   };
+  const visibleRepos = scoped.map((r) => ({ repo: r, branches: r.branches.filter(keep) })).filter((r) => r.branches.length || !(q || filter));
+  const hiddenRepos = scoped.length - visibleRepos.length;
 
   return (
     <Page>
-      <div className="mb-6 flex items-center gap-2 animate-enter">
+      <div className="mb-3 flex items-center gap-2 animate-enter">
         <Segmented
           options={[
-            { href: link(), label: "Todas", active: !filter, count: all.length },
-            { href: link("nopr"), label: "Sem PR", active: filter === "nopr", count: all.filter(noPr).length },
+            { href: link(), label: "Abertas", active: !filter, count: live.length },
+            { href: link("nopr"), label: "Sem PR", active: filter === "nopr", count: live.filter(noPr).length },
             {
               href: link("stale"),
               label: (
@@ -104,9 +121,16 @@ export async function BranchesView({ ctx, filter }: { ctx?: string; filter?: str
                 </>
               ),
               active: filter === "stale",
-              count: all.filter(isStale).length,
+              count: live.filter(isStale).length,
             },
+            { href: link("merged"), label: "Mergeadas em dev", active: filter === "merged", count: base.length - live.length },
           ]}
+        />
+      </div>
+      <div className="mb-6 animate-enter">
+        <FilterBar
+          placeholder="Buscar branch, commit ou autor…"
+          selects={[{ param: "repo", placeholder: "Todos os repos", options: repos.map((r) => ({ value: r.repo, label: r.repo })) }]}
         />
       </div>
 
@@ -118,9 +142,9 @@ export async function BranchesView({ ctx, filter }: { ctx?: string; filter?: str
         </Empty>
       )}
 
-      {repos.map((repo) => {
-        const branches = repo.branches.filter(keep);
+      {visibleRepos.map(({ repo, branches }) => {
         const context = byId.get(repo.contextId);
+        const hidden = repo.branches.filter((b) => b.merged).length;
         return (
           <Section
             key={repo.repo}
@@ -128,10 +152,17 @@ export async function BranchesView({ ctx, filter }: { ctx?: string; filter?: str
             icon={context && <Dot color={context.color} size={7} />}
             count={branches.length}
             aside={
-              <a href={repo.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[12px] text-fg-3 transition-colors hover:text-fg">
-                base <span className="font-mono text-fg-2">{repo.defaultBranch}</span>
-                <Icon name="external" size={11} />
-              </a>
+              <span className="flex items-center gap-3 text-[12px] text-fg-3">
+                {hidden > 0 && filter !== "merged" && (
+                  <a href={link("merged")} className="transition-colors hover:text-fg">
+                    {hidden} já em {repo.integrationBranch} ocultas
+                  </a>
+                )}
+                <a href={repo.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-fg">
+                  base <span className="font-mono text-fg-2">{repo.defaultBranch}</span>
+                  <Icon name="external" size={11} />
+                </a>
+              </span>
             }
           >
             {branches.length ? (
@@ -141,11 +172,17 @@ export async function BranchesView({ ctx, filter }: { ctx?: string; filter?: str
                 ))}
               </ul>
             ) : (
-              <p className="px-2 py-3 text-fg-3">Nenhuma branch neste filtro.</p>
+              <p className="px-2 py-3 text-fg-3">Nenhuma branch aberta.</p>
             )}
           </Section>
         );
       })}
+
+      {hiddenRepos > 0 && repos.length > 0 && (
+        <p className="px-2 text-[13px] text-fg-3">
+          {hiddenRepos} {hiddenRepos === 1 ? "repositório" : "repositórios"} sem branches neste filtro.
+        </p>
+      )}
     </Page>
   );
 }

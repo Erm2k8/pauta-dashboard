@@ -5,7 +5,18 @@ import { ListSkeleton, PageHeader } from "@/ui";
 async function Content({ searchParams }: { searchParams: PageProps<"/tasks">["searchParams"] }) {
   const params = await searchParams;
   const pick = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : undefined);
-  const filters: TaskFilters = { ctx: pick("ctx"), source: pick("source"), group: pick("group"), show: pick("show"), who: pick("who") };
+  const filters: TaskFilters = {
+    ctx: pick("ctx"),
+    source: pick("source"),
+    group: pick("group"),
+    show: pick("show"),
+    who: pick("who"),
+    q: pick("q"),
+    container: pick("container"),
+    priority: pick("priority"),
+    label: pick("label"),
+    all: pick("all"),
+  };
   return <TasksView filters={filters} />;
 }
 

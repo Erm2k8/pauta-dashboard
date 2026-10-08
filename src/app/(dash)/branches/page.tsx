@@ -1,10 +1,12 @@
 import { Suspense } from "react";
-import { BranchesView } from "@/modules/branches/view";
+import { BranchesView, type BranchFilters } from "@/modules/branches/view";
 import { ListSkeleton, PageHeader } from "@/ui";
 
 async function Content({ searchParams }: { searchParams: PageProps<"/branches">["searchParams"] }) {
-  const { ctx, filter } = await searchParams;
-  return <BranchesView ctx={typeof ctx === "string" ? ctx : undefined} filter={typeof filter === "string" ? filter : undefined} />;
+  const params = await searchParams;
+  const pick = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : undefined);
+  const filters: BranchFilters = { ctx: pick("ctx"), filter: pick("filter"), q: pick("q"), repo: pick("repo") };
+  return <BranchesView filters={filters} />;
 }
 
 export default function BranchesPage({ searchParams }: PageProps<"/branches">) {
