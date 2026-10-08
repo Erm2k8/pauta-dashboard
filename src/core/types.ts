@@ -98,6 +98,8 @@ export interface Branch {
   /** Commits à frente / atrás da branch padrão. */
   ahead: number;
   behind: number;
+  /** Sem PR aberto e todos os commits já estão na branch de integração (`dev`). */
+  merged: boolean;
   pr: {
     number: number;
     url: string;
@@ -111,6 +113,8 @@ export interface RepoBranches {
   contextId: string;
   repo: string;
   defaultBranch: string;
+  /** Branch `dev`, quando existe: usada para detectar branches já mergeadas. */
+  integrationBranch: string | null;
   url: string;
   branches: Branch[];
 }

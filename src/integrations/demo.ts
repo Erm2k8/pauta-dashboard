@@ -69,14 +69,18 @@ function branches(ctx: Context): RepoBranches[] {
   const repo = `${ctx.id}/web`;
   const b = (name: string, h: number, ahead: number, behind: number, pr: RepoBranches["branches"][number]["pr"], msg: string, author = "voce") => ({
     contextId: ctx.id, repo, name, url: "https://github.com", lastCommitAt: at(h), lastCommitMessage: msg, author, ahead, behind, pr,
+    merged: !pr && ahead > 0 && msg.startsWith("merge:"),
   });
   return [
     {
       contextId: ctx.id,
       repo,
       defaultBranch: "main",
+      integrationBranch: "dev",
       url: "https://github.com",
       branches: [
+        b("feat/busca-global", 24 * 9, 5, 18, null, "merge: busca global já está em dev"),
+        b("fix/footer-links", 24 * 20, 1, 60, null, "merge: corrige links do rodapé"),
         b("feat/checkout-gateway", 3, 12, 2, { number: 412, url: "https://github.com", draft: false, review: "approved", checks: "success" }, "ajusta tratamento de erro do gateway"),
         b("fix/session-cache", 26, 4, 9, { number: 88, url: "https://github.com", draft: false, review: "changes", checks: "failure" }, "usa TTL configurável"),
         b("feat/notificacoes", 50, 7, 31, { number: 430, url: "https://github.com", draft: true, review: null, checks: "pending" }, "wip: tela de preferências"),

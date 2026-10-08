@@ -5,7 +5,10 @@ import { readToken } from "@/core/env";
 import type { Branch, CheckState, Context, Label, Priority, RepoBranches, ReviewState, WorkItem } from "@/core/types";
 import type { Provider } from "../types";
 
-type Rollup = { nodes: { commit: { statusCheckRollup: { state: string } | null } }[] };
+/** Branch onde as features são integradas antes de ir para a padrão. */
+const INTEGRATION_BRANCH = "dev";
+
+type Rollup ={ nodes: { commit: { statusCheckRollup: { state: string } | null } }[] };
 type Gql = ReturnType<typeof client>;
 
 interface IssueNode {
@@ -230,6 +233,7 @@ interface RefNode {
     author?: { name: string | null; user: { login: string } | null } | null;
   } | null;
   compare: { aheadBy: number; behindBy: number } | null;
+  vsDev?: { behindBy: number } | null;
   associatedPullRequests: {
     nodes: { number: number; url: string; isDraft: boolean; reviewDecision: string | null; commits: Rollup }[];
   };
@@ -238,21 +242,26 @@ interface RefNode {
 async function fetchRepoBranches(token: string, ctx: Context, fullName: string): Promise<RepoBranches> {
   const [owner, name] = fullName.split("/");
   const gql = client(token);
-  const head = await gql<{ repository: { url: string; defaultBranchRef: { name: string } | null } }>(
-    `query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { url defaultBranchRef { name } } }`,
+  const head = await gql<{ repository: { url: string; defaultBranchRef: { name: string } | null; dev: { name: string } | null } }>(
+    `query($owner: String!, $name: String!) {
+      repository(owner: $owner, name: $name) { url defaultBranchRef { name } dev: ref(qualifiedName: "refs/heads/${INTEGRATION_BRANCH}") { name } }
+    }`,
     { owner, name },
   );
   const defaultBranch = head.repository.defaultBranchRef?.name ?? "main";
+  const integrationBranch = head.repository.dev && head.repository.dev.name !== defaultBranch ? head.repository.dev.name : null;
+  const vsDev = integrationBranch ? `vsDev: compare(headRef: "${integrationBranch}") { behindBy }` : "";
 
   // compare(headRef: default) parte da branch: aheadBy = commits da default que faltam na branch.
   const res = await gql<{ repository: { refs: { nodes: RefNode[] } } }>(
     `query($owner: String!, $name: String!, $base: String!) {
       repository(owner: $owner, name: $name) {
-        refs(refPrefix: "refs/heads/", first: 40, orderBy: { field: TAG_COMMIT_DATE, direction: DESC }) {
+        refs(refPrefix: "refs/heads/", first: 100, orderBy: { field: TAG_COMMIT_DATE, direction: DESC }) {
           nodes {
             name
             target { ... on Commit { committedDate messageHeadline author { name user { login } } } }
             compare(headRef: $base) { aheadBy behindBy }
+            ${vsDev}
             associatedPullRequests(first: 1, states: [OPEN]) {
               nodes { number url isDraft reviewDecision commits(last: 1) { nodes { commit { statusCheckRollup { state } } } } }
             }
@@ -264,7 +273,7 @@ async function fetchRepoBranches(token: string, ctx: Context, fullName: string):
   );
 
   const branches: Branch[] = res.repository.refs.nodes
-    .filter((r) => r.name !== defaultBranch && r.target?.committedDate)
+    .filter((r) => r.name !== defaultBranch && r.name !== integrationBranch && r.target?.committedDate)
     .map((r) => {
       const pr = r.associatedPullRequests.nodes[0];
       return {
@@ -277,13 +286,14 @@ async function fetchRepoBranches(token: string, ctx: Context, fullName: string):
         author: r.target!.author?.user?.login ?? r.target!.author?.name ?? "",
         ahead: r.compare?.behindBy ?? 0,
         behind: r.compare?.aheadBy ?? 0,
+        merged: !pr && r.vsDev?.behindBy === 0,
         pr: pr
           ? { number: pr.number, url: pr.url, draft: pr.isDraft, review: reviewState(pr.reviewDecision), checks: checkState(pr.commits) }
           : null,
       };
     });
 
-  return { contextId: ctx.id, repo: fullName, defaultBranch, url: head.repository.url, branches };
+  return { contextId: ctx.id, repo: fullName, defaultBranch, integrationBranch, url: head.repository.url, branches };
 }
 
 async function fetchBranches(ctx: Context): Promise<RepoBranches[]> {
