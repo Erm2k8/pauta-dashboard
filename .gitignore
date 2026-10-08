@@ -44,3 +44,6 @@ next-env.d.ts
 # local sqlite
 *.db
 *.db-journal
+
+# contextos reais (seed local)
+contexts.local.json

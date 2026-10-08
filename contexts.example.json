@@ -1,0 +1,18 @@
+[
+  {
+    "id": "empresa-a",
+    "name": "Empresa A",
+    "color": "#8b93ff",
+    "githubOwner": "empresa-a",
+    "githubRepos": ["empresa-a/web", "empresa-a/api"],
+    "planeWorkspace": "empresa-a",
+    "planeProjects": ["WEB"]
+  },
+  {
+    "id": "pessoal",
+    "name": "Pessoal",
+    "color": "#4fb6c9",
+    "githubOwner": "seu-usuario",
+    "githubRepos": ["seu-usuario/projeto"]
+  }
+]
