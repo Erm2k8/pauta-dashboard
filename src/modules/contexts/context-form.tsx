@@ -7,8 +7,16 @@ import { Icon } from "@/ui/icons";
 import { toast } from "@/ui/toast";
 import { deleteContext, saveContext, type FormState } from "./actions";
 
-/** Paleta discreta: a cor do contexto aparece só como marcador. */
-export const CONTEXT_COLORS = ["#8b93ff", "#4fb6c9", "#5dbb7f", "#d8b04a", "#e0795a", "#d070a8", "#9a9aa3"];
+/** Paleta saturada por matiz, em tom claro, base e escuro. A cor do contexto aparece só como marcador. */
+export const CONTEXT_PALETTE = [
+  { name: "Vermelho", shades: ["#f87171", "#ef4444", "#b91c1c"] },
+  { name: "Amarelo", shades: ["#fde047", "#eab308", "#a16207"] },
+  { name: "Verde", shades: ["#4ade80", "#16a34a", "#166534"] },
+  { name: "Azul", shades: ["#60a5fa", "#2563eb", "#1e40af"] },
+  { name: "Roxo", shades: ["#c084fc", "#9333ea", "#6b21a8"] },
+] as const;
+const SHADE_NAMES = ["claro", "", "escuro"];
+const DEFAULT_COLOR = CONTEXT_PALETTE[3].shades[1];
 
 function Field({ label, hint, htmlFor, children }: { label: string; hint?: ReactNode; htmlFor: string; children: ReactNode }) {
   return (
@@ -36,7 +44,7 @@ function Group({ icon, title, children }: { icon: ReactNode; title: string; chil
 
 export function ContextForm({ context, onDone }: { context?: Context; onDone?: () => void }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveContext, {});
-  const [color, setColor] = useState(context?.color ?? CONTEXT_COLORS[0]);
+  const [color, setColor] = useState(context?.color ?? DEFAULT_COLOR);
   const [confirming, setConfirming] = useState(false);
   const [deleting, startDelete] = useTransition();
   const id = context?.id ?? "novo";
@@ -58,20 +66,25 @@ export function ContextForm({ context, onDone }: { context?: Context; onDone?: (
         </Field>
         <div className="space-y-1.5">
           <span className="block text-[13px] text-fg-2">Cor</span>
-          <div className="flex h-[31px] items-center gap-1.5">
-            {CONTEXT_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-label={`Usar cor ${c}`}
-                aria-pressed={color === c}
-                onClick={() => setColor(c)}
-                className={cx(
-                  "size-5 rounded-full transition-transform duration-150 hover:scale-110",
-                  color === c && "ring-2 ring-fg-2 ring-offset-2 ring-offset-surface",
-                )}
-                style={{ background: c }}
-              />
+          <div className="flex items-center gap-3">
+            {CONTEXT_PALETTE.map((hue) => (
+              <div key={hue.name} className="flex gap-1 rounded-full bg-bg p-1" role="group" aria-label={hue.name}>
+                {hue.shades.map((c, i) => (
+                  <button
+                    key={c}
+                    type="button"
+                    data-tip={`${hue.name} ${SHADE_NAMES[i]}`.trim()}
+                    aria-label={`Usar cor ${hue.name} ${SHADE_NAMES[i]}`.trim()}
+                    aria-pressed={color === c}
+                    onClick={() => setColor(c)}
+                    className={cx(
+                      "size-5 rounded-full transition-transform duration-150 hover:scale-115",
+                      color === c && "ring-2 ring-fg ring-offset-2 ring-offset-bg",
+                    )}
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         </div>

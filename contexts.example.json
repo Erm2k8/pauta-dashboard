@@ -2,7 +2,7 @@
   {
     "id": "empresa-a",
     "name": "Empresa A",
-    "color": "#8b93ff",
+    "color": "#2563eb",
     "githubOwner": "empresa-a",
     "githubRepos": ["empresa-a/web", "empresa-a/api"],
     "planeWorkspace": "empresa-a",
@@ -11,7 +11,7 @@
   {
     "id": "pessoal",
     "name": "Pessoal",
-    "color": "#4fb6c9",
+    "color": "#9333ea",
     "githubOwner": "seu-usuario",
     "githubRepos": ["seu-usuario/projeto"]
   }
