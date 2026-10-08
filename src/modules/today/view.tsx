@@ -2,6 +2,8 @@ import Link from "next/link";
 import { loadItems } from "@/core/items";
 import type { Context, Item } from "@/core/types";
 import { ItemList } from "@/modules/tasks/item-list";
+import { buildClaudePrompt } from "./claude-prompt";
+import { CopyPrompt } from "./copy-prompt";
 import { button, Dot, Empty, Errors, Page, Section } from "@/ui";
 import { due } from "@/ui/format";
 import { Icon } from "@/ui/icons";
@@ -80,6 +82,9 @@ export async function TodayView({ ctx }: { ctx?: string }) {
   return (
     <Page>
       <Errors errors={errors} names={new Map(contexts.map((c) => [c.id, c.name]))} />
+      <div className="mb-4 flex justify-end">
+        <CopyPrompt prompt={buildClaudePrompt(active, new Map(contexts.map((c) => [c.id, c.name])), now)} />
+      </div>
       <Summary contexts={selected} items={active} now={now} />
 
       <Section title="Foco de hoje" icon={<Icon name="target" size={12} className="text-accent" />} count={today.length}>
