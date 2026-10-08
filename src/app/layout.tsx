@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Painel",
+  title: { default: "Pauta", template: "%s · Pauta" },
   description: "Tarefas, branches e prioridades de todos os contextos.",
 };
 

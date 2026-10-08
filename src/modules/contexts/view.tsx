@@ -7,7 +7,7 @@ import { button, Dot, Page, Section } from "@/ui";
 import { Icon } from "@/ui/icons";
 import { EditableContext, NewContext } from "./context-form";
 
-const NEW_GITHUB_TOKEN = "https://github.com/settings/tokens/new?scopes=repo,read:org&description=Painel%20pessoal";
+const NEW_GITHUB_TOKEN = "https://github.com/settings/tokens/new?scopes=repo,read:org&description=Pauta";
 
 /** Teste de conexão: qual chave, de quem é e quantos itens vieram de cada fonte. */
 async function Status({ context }: { context: Context }) {

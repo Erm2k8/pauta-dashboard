@@ -1,6 +1,8 @@
-# Painel
+<p align="center"><img src="docs/logo.svg" width="64" height="64" alt=""></p>
 
-Dashboard pessoal: tarefas do GitHub e do Plane, prioridades e branches de vários contextos (empresas/projetos) num só lugar.
+<h1 align="center">Pauta</h1>
+
+<p align="center">O que está na pauta hoje: tarefas do GitHub e do Plane, prioridades e branches de todos os seus contextos num só lugar.</p>
 
 - **Hoje**: foco do dia, reviews pendentes e sugestões ordenadas por score.
 - **Tarefas**: lista unificada com filtros (fonte, agrupamento, adiadas) e ações inline (P0–P3, Hoje/Semana, adiar).
@@ -24,7 +26,7 @@ Depois crie um contexto em `/contexts`, um por organização/empresa.
 
 ### Uma chave pessoal para várias organizações
 
-- **GitHub**: crie um token *classic* com os escopos `repo` e `read:org` ([link já preenchido](https://github.com/settings/tokens/new?scopes=repo,read:org&description=Painel%20pessoal)). Tokens fine-grained só enxergam um dono por token, por isso não servem para duas orgs ao mesmo tempo. Se a org usa SSO, clique em **Configure SSO** ao lado do token e autorize cada uma. Salve como `GITHUB_TOKEN`.
+- **GitHub**: crie um token *classic* com os escopos `repo` e `read:org` ([link já preenchido](https://github.com/settings/tokens/new?scopes=repo,read:org&description=Pauta)). Tokens fine-grained só enxergam um dono por token, por isso não servem para duas orgs ao mesmo tempo. Se a org usa SSO, clique em **Configure SSO** ao lado do token e autorize cada uma. Salve como `GITHUB_TOKEN`.
 - **Plane Cloud**: gere a API key nas configurações e salve como `PLANE_API_KEY`.
 - Em cada contexto, preencha a(s) organização(ões) e deixe **Variável da chave** vazia: todos usam a chave padrão.
 - Se uma org bloquear tokens classic, crie um fine-grained só para ela, salve como `GITHUB_TOKEN_ORG_X` e informe esse nome no contexto.

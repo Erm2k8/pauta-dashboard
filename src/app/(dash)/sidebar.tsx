@@ -8,6 +8,7 @@ import { logout } from "@/core/auth";
 import { modules } from "@/core/modules";
 import { cx, Dot } from "@/ui";
 import { Icon } from "@/ui/icons";
+import { Logo } from "@/ui/logo";
 import { toast } from "@/ui/toast";
 
 type SidebarContext = { id: string; name: string; color: string };
@@ -122,11 +123,9 @@ function RefreshButton({ ctx, name }: { ctx: string | null; name?: string }) {
 export function Sidebar({ contexts }: { contexts: SidebarContext[] }) {
   return (
     <div className="flex h-full flex-col pt-3">
-      <Link href="/" className="mx-2 mb-5 flex h-8 items-center gap-2.5 rounded-md px-2.5 transition-colors hover:bg-surface">
-        <span className="grid size-5 place-items-center rounded-md bg-surface-3">
-          <span className="size-2 rounded-full bg-accent" />
-        </span>
-        <span className="text-[14px] font-semibold tracking-tight">Painel</span>
+      <Link href="/" className="group mx-2 mb-5 flex h-9 items-center gap-2.5 rounded-md px-2.5 transition-colors hover:bg-surface">
+        <Logo size={20} className="text-fg transition-transform duration-300 ease-out group-hover:rotate-[-12deg]" />
+        <span className="text-[15px] font-semibold tracking-tight">Pauta</span>
       </Link>
       <Suspense>
         <Nav contexts={contexts} />
