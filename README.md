@@ -16,11 +16,13 @@ Stack: Next.js 16 (App Router, Cache Components), Tailwind v4, Drizzle + libSQL/
 ```bash
 cp .env.example .env.local   # preencha DASHBOARD_PASSWORD e SESSION_SECRET
 npm install
-npm run db:push              # cria as tabelas em local.db
+npm run db:push              # cria as tabelas em local.db (obrigatório antes do primeiro dev)
 cp contexts.example.json contexts.local.json   # seus contextos (ignorado pelo git)
 npm run db:seed              # cria/atualiza os contextos do JSON
 npm run dev
 ```
+
+Se a sidebar mostrar "O banco ainda não tem as tabelas do Pauta" (ou o log "Failed query: select ... from contexts"), o `db:push` não foi executado.
 
 Depois crie um contexto em `/contexts`, um por organização/empresa.
 
@@ -46,6 +48,9 @@ Os dados das integrações ficam em cache por alguns minutos; o botão **Atualiz
 2. **Repositório**: suba o projeto para o GitHub.
 3. **Vercel**: importe o repositório e configure as Environment Variables: `DASHBOARD_PASSWORD`, `SESSION_SECRET`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN` e cada token referenciado pelos contextos.
 4. Cada `git push` na branch principal faz um novo deploy.
+5. Valide com `/api/health` logado: deve responder `{"ok":true}`. Não defina `DEMO_DATA` em produção.
+
+Convenções e política de erros do projeto estão em [`CLAUDE.md`](CLAUDE.md).
 
 ## Estrutura
 
